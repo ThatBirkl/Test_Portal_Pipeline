@@ -1,0 +1,17 @@
+# What:  GitLab CI job that pushes release tags (release/*) to a GitHub repo.
+# Why:   #X test - repo lives in GitLab, only selected tags go to GitHub (later: Vercel reads them there).
+# Usage: copy as .gitlab-ci.yml into the GitLab test project. CI/CD variables:
+#          GITHUB_TOKEN  fine-grained PAT, only the GitHub test repo, Contents: read/write. Masked + Protected.
+#          GITHUB_REPO   owner/name of the GitHub test repo.
+#        Protect tags release/* (Settings > Repository > Protected tags), else the protected token isn't passed.
+
+push-tag-to-github:
+  image:
+    name: alpine/git:latest
+    entrypoint: [""]
+  variables:
+    GIT_DEPTH: "0"   # full history; GitHub rejects pushes from a shallow clone
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^release\//'
+  script:
+    - git push "https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" "refs/tags/${CI_COMMIT_TAG}"
