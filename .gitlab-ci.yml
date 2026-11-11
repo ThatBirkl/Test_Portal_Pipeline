@@ -1,9 +1,10 @@
-# What:  GitLab CI job that pushes release tags (release/*) to a GitHub repo.
-# Why:   #X test - repo lives in GitLab, only selected tags go to GitHub (later: Vercel reads them there).
+# What:  GitLab CI job: on a release tag (release/*), push the tag to GitHub and create a branch of the same name
+#        on the tag's commit (e.g. tag release/2 -> branch release/2).
+# Why:   #X test - repo lives in GitLab, only selected tags go to GitHub. Vercel builds from branches.
 # Usage: copy as .gitlab-ci.yml into the GitLab test project. CI/CD variables:
-#          GITHUB_TOKEN  fine-grained PAT, only the GitHub test repo, Contents: read/write. Masked + Protected.
+#          GITHUB_TOKEN  fine-grained PAT, only the GitHub test repo, Contents: read/write. Masked (+ Protected).
 #          GITHUB_REPO   owner/name of the GitHub test repo.
-#        Protect tags release/* (Settings > Repository > Protected tags), else the protected token isn't passed.
+#        If GITHUB_TOKEN is Protected: protect tags release/* (Settings > Repository > Protected tags).
 
 push-tag-to-github:
   image:
@@ -14,4 +15,6 @@ push-tag-to-github:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^release\//'
   script:
-    - git push "https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" "refs/tags/${CI_COMMIT_TAG}"
+    - GITHUB_URL="https://git:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
+    - git push "$GITHUB_URL" "refs/tags/${CI_COMMIT_TAG}"
+    - git push "$GITHUB_URL" "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_TAG}"
